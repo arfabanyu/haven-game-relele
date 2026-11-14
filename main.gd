@@ -6,6 +6,7 @@ extends Node2D
 @onready var kotak_soal = $UI/KotakSoal
 @onready var input_soal = $UI/KotakSoal/VBoxContainer/InputSoal
 @onready var soal = $UI/KotakSoal/VBoxContainer/Soal
+@onready var fish_state = $UI/FishStateContainer/FishState
 
 var questions: Array[Dictionary] = [
 	{
@@ -112,7 +113,7 @@ func _on_start_fishing_button_pressed() -> void:
 	start_fishing = true
 	waiting_for_fish = true
 	start_fishing_button.visible = false
-	print("mulai mancing")
+	fish_state.text = "Mulai mancing"
 	_on_start_fishing()
 
 	
@@ -130,18 +131,18 @@ func _on_waiting_for_fish() -> void:
 	
 	if get_fish == 1:
 		_on_fish_biting()
+		fish_state.text = "Ikan memakan umpan!"
 	else:
 		waiting_for_fish = false
 		start_fishing = false
 		start_fishing_button.visible = true
 		
-		print("gagal dapet ikan")
+		fish_state.text = "Gagal dapet ikan"
 		
 func _on_fish_biting() -> void:
 		fish_biting = true
 		waiting_for_fish = false
 		_display_questions()
-		print("berhasil dapet ikan")
 		
 func _display_questions():
 	if question_index > 4:
@@ -167,7 +168,7 @@ func _display_questions():
 
 func _check_answer(answer: String):
 	if int(answer) == new_questions[question_index].answer:
-		print("benar")
+		fish_state.text = "Benar"
 		question_index += 1
 		progress_soal.text = str(question_index + 1) + "/5"
 		input_soal.text = ""
@@ -179,7 +180,7 @@ func _check_answer(answer: String):
 		kotak_soal.visible = false
 		question_index = 0
 		progress_soal.text = "1/5"
-		print("salah: ikan lepas")
+		fish_state.text = "Salah: ikan lepas"
 		
 func _get_fish():
 	start_fishing = false
