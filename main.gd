@@ -1,10 +1,11 @@
 extends Node2D
 
 @onready var start_fishing_button = $UI/Container/StartFishingButton
-@onready var progress_bar = $UI/KotakSoal/TimerSoal
+@onready var progress_soal = $UI/KotakSoal/ProgressSoal
 @onready var timer_soal = $UI/KotakSoal/TimerSoal/Timer
 @onready var kotak_soal = $UI/KotakSoal
 @onready var input_soal = $UI/KotakSoal/VBoxContainer/InputSoal
+@onready var soal = $UI/KotakSoal/VBoxContainer/Soal
 
 var questions: Array[Dictionary] = [
 	{
@@ -88,6 +89,8 @@ var questions: Array[Dictionary] = [
 		"answer": 15
 	}
 ]
+var new_questions: Array[Dictionary]
+var question_index: int = 0
 
 var start_fishing := false
 var waiting_for_fish := false
@@ -99,6 +102,7 @@ var waiting_for_fish_time := 4
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	start_fishing_button.pressed.connect(_on_start_fishing_button_pressed)
+	input_soal.text_submitted.connect(_check_answer)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -140,16 +144,47 @@ func _on_fish_biting() -> void:
 		print("berhasil dapet ikan")
 		
 func _display_questions():
-	kotak_soal.visible = true
+	if question_index > 4:
+		question_index = 0
+		kotak_soal.visible = false
+		return
 	
-	var new_questions: Array[Dictionary] = [
-		questions[randi_range(0,19)],
-		questions[randi_range(0,19)],
-		questions[randi_range(0,19)],
-		questions[randi_range(0,19)],
-		questions[randi_range(0,19)],
-		
-	]
+	if new_questions.size() == 0:
+		new_questions = [
+			questions[randi_range(0,19)],
+			questions[randi_range(0,19)],
+			questions[randi_range(0,19)],
+			questions[randi_range(0,19)],
+			questions[randi_range(0,19)],
+		]
+	
+	soal.text = new_questions[question_index].question
+	
+	kotak_soal.visible = true
+	input_soal.grab_focus()
+	
 
-func _check_answer():
-	pass
+
+func _check_answer(answer: String):
+	if int(answer) == new_questions[question_index].answer:
+		print("benar")
+		question_index += 1
+		progress_soal.text = str(question_index + 1) + "/5"
+		input_soal.text = ""
+		_display_questions()
+		
+	else:
+		start_fishing = false
+		fish_biting = false
+		kotak_soal.visible = false
+		question_index = 0
+		progress_soal.text = "1/5"
+		print("salah: ikan lepas")
+		
+func _get_fish():
+	start_fishing = false
+	fish_biting = false
+	kotak_soal.visible = false
+	question_index = 0
+	progress_soal.text = "1/5"
+	
