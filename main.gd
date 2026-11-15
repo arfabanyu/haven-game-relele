@@ -11,6 +11,18 @@ extends Node2D
 @onready var teks_dapet_ikan = $UI/NotifDapetIkan/VBoxContainer/TeksDapetIkan
 @onready var kotak_notif_dapet_ikan = $UI/NotifDapetIkan
 @onready var player = $Player
+@onready var player_idle_animation = $Player/Idle
+@onready var player_start_fishing_animation = $Player/StartFishing
+@onready var player_waiting_animation = $Player/Waiting
+@onready var player_narik_ikan_animation = $Player/NarikIkan
+@onready var player_narik_ikan_animation_player = $Player/AnimationPlayer
+@onready var player_finish_fishing_animation = $Player/FinishFishing
+@onready var correct_answer_sound = $UI/KotakSoal/VBoxContainer/CorrectAnswerSfx
+@onready var incorrect_answer_sound = $UI/KotakSoal/VBoxContainer/IncorrectAnswerSfx
+@onready var button_sound = $ButtonSound
+@onready var get_common_fish_sound = $GetCommonFishSound
+@onready var get_legendary_fish_sound = $GetLegendaryFishSound
+
 
 var questions: Array[Dictionary] = [
 	{
@@ -124,8 +136,8 @@ var fishes: Array[Dictionary] = [
 
 var new_questions: Array[Dictionary]
 var question_index: int = 0
-var waiting_for_fish_time: SceneTreeTimer
-var wait_time 
+var waiting_for_fish_time
+var wait_time = 4
 
 
 var start_fishing := false
@@ -139,25 +151,40 @@ func _ready() -> void:
 	start_fishing_button.pressed.connect(_on_start_fishing_button_pressed)
 	input_soal.text_submitted.connect(_check_answer)
 	oke_dapet_ikan_button.pressed.connect(_on_oke_dapet_ikan_button_pressed)
+	player_idle_animation.play()
+	
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	if waiting_for_fish:
-		fish_state.text = "Mulai mancing\n" + str(int(wait_time - waiting_for_fish_time.time_left))
+	pass
+	#if waiting_for_fish:
+		#fish_state.text = "Mulai mancing\n" + str(int(wait_time - waiting_for_fish_time.time_left))
 
 func _on_start_fishing_button_pressed() -> void:
 	start_fishing = true
 	waiting_for_fish = true
 	start_fishing_button.visible = false
 	fish_state.text = "Mulai mancing"
+	button_sound.play()
+	
 	_on_start_fishing()
 
 	
 func _on_start_fishing():
+	player_idle_animation.stop()
+	player_idle_animation.visible = false
+	player_start_fishing_animation.play()
+	player_start_fishing_animation.visible = true
+	await get_tree().create_timer(1.5).timeout
 	_on_waiting_for_fish()
 	
 		
 func _on_waiting_for_fish() -> void:
+	player_start_fishing_animation.stop()
+	player_start_fishing_animation.visible = false
+	player_waiting_animation.play()
+	player_waiting_animation.visible = true
 	var get_fish = 0
 	
 	if waiting_for_fish == true:
@@ -167,20 +194,31 @@ func _on_waiting_for_fish() -> void:
 		waiting_for_fish = false
 		get_fish = randi_range(0, 1)
 	
+	player_waiting_animation.stop()
+	player_waiting_animation.visible = false
 	if get_fish == 1:
 		_on_fish_biting()
 		fish_state.text = "Ikan memakan umpan!"
 	else:
 		waiting_for_fish = false
 		start_fishing = false
-		start_fishing_button.visible = true
-		
+		player_finish_fishing_animation.play()
+		player_finish_fishing_animation.visible = true
 		fish_state.text = "Gagal dapet ikan"
+		await get_tree().create_timer(2.0).timeout
+		start_fishing_button.visible = true
+		fish_state.text = ""
+		player_finish_fishing_animation.stop()
+		player_finish_fishing_animation.visible = false
+		player_idle_animation.play()
+		player_idle_animation.visible = true
 		
 func _on_fish_biting() -> void:
-		fish_biting = true
-		waiting_for_fish = false
-		_display_questions()
+	player_narik_ikan_animation_player.play("NarikIkan")
+	player_narik_ikan_animation.visible = true
+	fish_biting = true
+	waiting_for_fish = false
+	_display_questions()
 		
 func _display_questions():
 	if question_index > 4:
@@ -207,7 +245,6 @@ func _display_questions():
 func _check_answer(answer: String):
 	if int(answer) == new_questions[question_index].answer:
 		fish_state.text = "Benar"
-		progress_soal.text = str(question_index + 1) + "/5"
 		input_soal.text = ""
 		input_soal.edit()
 		
@@ -215,6 +252,8 @@ func _check_answer(answer: String):
 			_get_fish()
 			return
 		question_index += 1
+		progress_soal.text = str(question_index + 1) + "/5"
+		correct_answer_sound.play()
 		_display_questions()
 	else:
 		start_fishing = false
@@ -223,8 +262,30 @@ func _check_answer(answer: String):
 		question_index = 0
 		progress_soal.text = "1/5"
 		fish_state.text = "Salah: ikan lepas"
+		player_narik_ikan_animation_player.stop()
+		player_narik_ikan_animation.visible = false
+		player_finish_fishing_animation.play()
+		player_finish_fishing_animation.visible = true
+		incorrect_answer_sound.play()
+		await get_tree().create_timer(2.0).timeout
+		start_fishing_button.visible = true
+		fish_state.text = ""
+		player_finish_fishing_animation.stop()
+		player_finish_fishing_animation.visible = false
+		player_idle_animation.play()
+		player_idle_animation.visible = true
 		
 func _get_fish():
+	player_narik_ikan_animation_player.stop()
+	player_narik_ikan_animation.visible = false
+	player_finish_fishing_animation.play()
+	player_finish_fishing_animation.visible = true
+	await get_tree().create_timer(1.5).timeout
+	player_finish_fishing_animation.stop()
+	player_finish_fishing_animation.visible = false
+	player_idle_animation.play()
+	player_idle_animation.visible = true
+	
 	start_fishing = false
 	fish_biting = false
 	kotak_soal.visible = false
@@ -234,6 +295,11 @@ func _get_fish():
 	var random_index = randi_range(0, fishes.size() - 1)
 	var fish = fishes[random_index]
 	
+	if random_index == 2:
+		get_legendary_fish_sound.play()
+	else:
+		get_common_fish_sound.play()
+	
 	fish_state.text = ""
 	teks_dapet_ikan.text = "Kamu Berhasil mendapatkan ikan!\n" + fish.name + " - " + fish.rarity
 	kotak_notif_dapet_ikan.visible = true
@@ -241,4 +307,5 @@ func _get_fish():
 func _on_oke_dapet_ikan_button_pressed() -> void:
 	kotak_notif_dapet_ikan.visible = false
 	start_fishing_button.visible = true
+	button_sound.play()
 	
