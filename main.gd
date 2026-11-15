@@ -7,6 +7,10 @@ extends Node2D
 @onready var input_soal = $UI/KotakSoal/VBoxContainer/InputSoal
 @onready var soal = $UI/KotakSoal/VBoxContainer/Soal
 @onready var fish_state = $UI/FishStateContainer/FishState
+@onready var oke_dapet_ikan_button = $UI/NotifDapetIkan/VBoxContainer/OkeDapetIkanButton
+@onready var teks_dapet_ikan = $UI/NotifDapetIkan/VBoxContainer/TeksDapetIkan
+@onready var kotak_notif_dapet_ikan = $UI/NotifDapetIkan
+@onready var player = $Player
 
 var questions: Array[Dictionary] = [
 	{
@@ -90,24 +94,56 @@ var questions: Array[Dictionary] = [
 		"answer": 15
 	}
 ]
+
+var fishes: Array[Dictionary] = [
+	{
+		"name": "Nemo",
+		"rarity": "Common"
+	},
+	{
+		"name": "Bandeng",
+		"rarity": "Rare"
+	},
+	{
+		"name": "Lele",
+		"rarity": "Legendary"
+	},
+	{
+		"name": "sapu-sapu",
+		"rarity": "common"
+	},
+	{
+		"name": "cupang",
+		"rarity": "common"
+	},
+	{
+		"name": "gurita",
+		"rarity": "Rare"
+	},
+]
+
 var new_questions: Array[Dictionary]
 var question_index: int = 0
+var waiting_for_fish_time: SceneTreeTimer
+var wait_time 
+
 
 var start_fishing := false
 var waiting_for_fish := false
 var fish_biting := false
 var fishing_success := false
 var fishing_failed := false
-var waiting_for_fish_time := 4
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	start_fishing_button.pressed.connect(_on_start_fishing_button_pressed)
 	input_soal.text_submitted.connect(_check_answer)
+	oke_dapet_ikan_button.pressed.connect(_on_oke_dapet_ikan_button_pressed)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	pass
+	if waiting_for_fish:
+		fish_state.text = "Mulai mancing\n" + str(int(wait_time - waiting_for_fish_time.time_left))
 
 func _on_start_fishing_button_pressed() -> void:
 	start_fishing = true
@@ -125,7 +161,9 @@ func _on_waiting_for_fish() -> void:
 	var get_fish = 0
 	
 	if waiting_for_fish == true:
-		await get_tree().create_timer(randi_range(4, 10)).timeout
+		waiting_for_fish_time = get_tree().create_timer(randi_range(4, 10))
+		wait_time = waiting_for_fish_time.time_left
+		await waiting_for_fish_time.timeout
 		waiting_for_fish = false
 		get_fish = randi_range(0, 1)
 	
@@ -149,7 +187,7 @@ func _display_questions():
 		question_index = 0
 		kotak_soal.visible = false
 		return
-	
+	print(question_index)
 	if new_questions.size() == 0:
 		new_questions = [
 			questions[randi_range(0,19)],
@@ -169,11 +207,15 @@ func _display_questions():
 func _check_answer(answer: String):
 	if int(answer) == new_questions[question_index].answer:
 		fish_state.text = "Benar"
-		question_index += 1
 		progress_soal.text = str(question_index + 1) + "/5"
 		input_soal.text = ""
-		_display_questions()
+		input_soal.edit()
 		
+		if question_index > 3:
+			_get_fish()
+			return
+		question_index += 1
+		_display_questions()
 	else:
 		start_fishing = false
 		fish_biting = false
@@ -188,4 +230,15 @@ func _get_fish():
 	kotak_soal.visible = false
 	question_index = 0
 	progress_soal.text = "1/5"
+	
+	var random_index = randi_range(0, fishes.size() - 1)
+	var fish = fishes[random_index]
+	
+	fish_state.text = ""
+	teks_dapet_ikan.text = "Kamu Berhasil mendapatkan ikan!\n" + fish.name + " - " + fish.rarity
+	kotak_notif_dapet_ikan.visible = true
+
+func _on_oke_dapet_ikan_button_pressed() -> void:
+	kotak_notif_dapet_ikan.visible = false
+	start_fishing_button.visible = true
 	

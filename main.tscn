@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://b1xehw8o528ib" path="res://player.tscn" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://ddha3rr0fpw1g" path="res://kotak_soal.gd" id="3_1bvp3"]
 [ext_resource type="Script" uid="uid://d0cn75cjqtnr5" path="res://timer_soal.gd" id="3_h2yge"]
+[ext_resource type="Script" uid="uid://dd6khtqcbak2r" path="res://notif_dapet_ikan.gd" id="5_lquwl"]
 
 [node name="Main" type="Node2D" unique_id=1590172965]
 script = ExtResource("1_0xm2m")
@@ -19,6 +20,7 @@ offset_bottom = 40.0
 
 [node name="Label" type="Label" parent="UI/CenterContainer" unique_id=1929682299]
 layout_mode = 2
+horizontal_alignment = 1
 
 [node name="FishStateContainer" type="CenterContainer" parent="UI" unique_id=169728739]
 anchors_preset = 15
@@ -29,6 +31,7 @@ grow_vertical = 2
 
 [node name="FishState" type="Label" parent="UI/FishStateContainer" unique_id=1202244972]
 layout_mode = 2
+horizontal_alignment = 1
 
 [node name="Container" type="Control" parent="UI" unique_id=435060908]
 layout_mode = 3
@@ -95,3 +98,22 @@ script = ExtResource("3_h2yge")
 
 [node name="Timer" type="Timer" parent="UI/KotakSoal/TimerSoal" unique_id=398193217]
 wait_time = 30.0
+
+[node name="NotifDapetIkan" type="CenterContainer" parent="UI" unique_id=1493428036]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_lquwl")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/NotifDapetIkan" unique_id=1894636152]
+layout_mode = 2
+
+[node name="TeksDapetIkan" type="Label" parent="UI/NotifDapetIkan/VBoxContainer" unique_id=218296323]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="OkeDapetIkanButton" type="Button" parent="UI/NotifDapetIkan/VBoxContainer" unique_id=350059753]
+layout_mode = 2
+text = "Oke"
